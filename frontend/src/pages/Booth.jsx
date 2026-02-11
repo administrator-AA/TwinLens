@@ -46,6 +46,7 @@ export default function Booth() {
   const [networkStatus, setNetworkStatus] = useState(navigator.onLine ? 'online' : 'offline')
 
   const remoteVideoRef = useRef(null)
+  const ghostVideoRef = useRef(null) // 2nd ref
   const pendingSessionRef = useRef(null)
   const myUploadUrlRef = useRef(null)
 
@@ -144,10 +145,15 @@ export default function Booth() {
 
   // ── Remote stream → video element ────────────
   useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
+  if (remoteStream) {
+    if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = remoteStream
     }
-  }, [remoteStream])
+    if (ghostVideoRef.current) {
+      ghostVideoRef.current.srcObject = remoteStream // FEED THE GHOST REF TOO
+    }
+  }
+}, [remoteStream])
 
   // ── Capture ───────────────────────────────────
   const doCapture = useCallback(async (sid) => {
@@ -259,6 +265,7 @@ export default function Booth() {
           phase={phase}
           videoRef={videoRef}
           remoteVideoRef={remoteVideoRef}
+          ghostVideoRef={ghostVideoRef} // ghost prop
           remoteStream={remoteStream}
           peerCount={peerCount}
           roomId={roomId}
@@ -318,7 +325,7 @@ function PermissionScreen({ camError, onRetry }) {
 }
 
 function BoothView({
-  phase, videoRef, remoteVideoRef, remoteStream, peerCount, roomId,
+  phase, videoRef, remoteVideoRef, ghostVideoRef, remoteStream, peerCount, roomId,
   copied, countdown, ghostOpacity, setGhostOpacity,
   filterName, setFilterName, layout, setLayout,
   onCapture, onCopyLink, syncOffset,
@@ -334,7 +341,7 @@ function BoothView({
           {/* Ghost overlay of partner */}
           {remoteStream && (
             <video
-              ref={remoteVideoRef}
+              ref={ghostVideoRef} // CHANGE FROM remoteVideoRef TO ghostVideoRef
               autoPlay muted playsInline
               style={{ ...s.video, ...s.ghostOverlay, opacity: ghostOpacity }}
             />
@@ -361,11 +368,6 @@ function BoothView({
           <div style={s.viewfinderWrap}>
             <div style={s.viewfinderLabel}>Partner</div>
             <video ref={remoteVideoRef} autoPlay playsInline muted style={s.video} />
-            {phase === 'countdown' && countdown !== null && (
-              <div style={s.countdownOverlay}>
-                <CountdownRing value={countdown} max={2} />
-              </div>
-            )}
           </div>
         )}
 
