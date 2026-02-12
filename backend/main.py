@@ -101,16 +101,19 @@ async def websocket_booth(websocket: WebSocket, room_id: str):
         rooms[room_id] = []
         room_metadata[room_id] = {"created_at": time.time(), "peer_ids": []}
 
+    # 1. Immediate Full-Room Check
     if len(rooms[room_id]) >= 2:
         await websocket.send_json({"type": "ERROR", "message": "Room is full"})
         await websocket.close()
         return
 
+    # 2. Setup Peer Info
     peer_index = len(rooms[room_id])
     peer_id = str(uuid.uuid4())[:8]
     rooms[room_id].append(websocket)
     room_metadata[room_id]["peer_ids"].append(peer_id)
 
+    # 3. Send JOINED only to the person who just connected
     await websocket.send_json({
         "type": "JOINED",
         "peer_id": peer_id,
@@ -119,21 +122,13 @@ async def websocket_booth(websocket: WebSocket, room_id: str):
         "peers_count": len(rooms[room_id]),
     })
 
+    # 4. If this was the second person, notify the FIRST person (Peer 0) only
     if len(rooms[room_id]) == 2:
-        # Send PARTNER_JOINED ONLY to the first person (Peer 0)
-        # This tells Peer 0: "Someone joined, you are the Host, send an Offer."
+        # Peer 0 is always at index 0
         await rooms[room_id][0].send_json({
             "type": "PARTNER_JOINED", 
             "peers_count": 2
-    })
-    
-    # Send a DIFFERENT message to the second person (Peer 1)
-    # This tells Peer 1: "You are the Guest, stay quiet and wait for an Offer."
-    await rooms[room_id][1].send_json({
-        "type": "JOINED", 
-        "peer_index": 1, 
-        "peers_count": 2
-    })
+        })
 
     logger.info(f"Peer {peer_id} joined room {room_id} ({len(rooms[room_id])}/2)")
 

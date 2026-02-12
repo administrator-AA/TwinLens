@@ -28,23 +28,28 @@ export function useWebRTC({ roomId, localStream, onSignal, onPartnerJoined, onPa
   }, [])
 
  const createPeer = useCallback((initiator) => {
-  // CRITICAL: If no stream yet, don't create the peer. 
-  // Wait for the next render when stream is available.
-  if (!localStream) return; 
-
+  // Use the ref to ensure we have the absolute latest stream object
+  const currentStream = localStreamRef.current;
+  
+  if (!currentStream) {
+    console.warn('[WebRTC] No local stream available yet');
+    return;
+  }
+  
   destroyPeer();
 
-    const peer = new SimplePeer({
-      initiator,
-      stream: localStream, // Use the prop directly
-      trickle: true,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-        ],
-      },
-    })
+  const peer = new SimplePeer({
+    initiator,
+    stream: currentStream,
+    trickle: true,
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+      ],
+    },
+  });
+
 
     peer.on('signal', (data) => {
       if (!wsRef.current) return
@@ -87,69 +92,64 @@ export function useWebRTC({ roomId, localStream, onSignal, onPartnerJoined, onPa
       console.log('[WS] Connected to signaling server')
     }
 
-    ws.onmessage = (evt) => {
-      const msg = JSON.parse(evt.data)
+ws.onmessage = (evt) => {
+  const msg = JSON.parse(evt.data);
 
-      switch (msg.type) {
-        case 'JOINED':
-          setPeerIndex(msg.peer_index);
-          setPeerCount(msg.peers_count);
-          
-          if (msg.peers_count === 2) {
-            // We are the second person. Do NOT createPeer yet.
-            // Wait for the 'OFFER' message to trigger createPeer(false).
-            console.log("[WebRTC] Joined as Peer 1, waiting for offer...");
-        }
-        break;
+  switch (msg.type) {
+    case 'JOINED':
+      // Simply establish your identity in the room
+      setPeerIndex(msg.peer_index);
+      setPeerCount(msg.peers_count);
+      console.log(`[WebRTC] Joined as Peer ${msg.peer_index}`);
+      break;
 
-        case 'PARTNER_JOINED':
-          setPeerCount(2);
-          setState(ConnectionState.PARTNER_JOINED);
-          onPartnerJoined?.();
-          
-          // Only the first person (index 0) should initiate the call
-          if (peerIndex === 0 && localStreamRef.current) {
-            console.log("[WebRTC] I am Peer 0, initiating offer...");
-            createPeer(true);
-        }
-        break;
-
-        case 'OFFER':
-          if (!peerRef.current) {
-            console.log("[WebRTC] Received Offer, creating answerer peer...");
-            createPeer(false);
-          }
-          peerRef.current.signal(msg.signal);
-          break;
-
-        case 'ANSWER':
-        case 'ICE_CANDIDATE':
-          if (peerRef.current) {
-            peerRef.current.signal(msg.signal);
-          }
-        break;
-
-        case 'FIRE_AT':
-        case 'STITCH_READY':
-          onSignal?.(msg)
-          break
-
-        case 'PARTNER_LEFT':
-          onPartnerLeft?.()
-          setPeerCount(1)
-          setState(ConnectionState.DISCONNECTED)
-          destroyPeer()
-          setRemoteStream(null)
-          break
-
-        case 'ERROR':
-          setState(ConnectionState.ERROR)
-          break
-
-        default:
-          onSignal?.(msg)
+    case 'PARTNER_JOINED':
+      setPeerCount(2);
+      setState(ConnectionState.PARTNER_JOINED);
+      onPartnerJoined?.();
+      
+      // ONLY Peer 0 initiates the call when a partner arrives
+      if (peerIndex === 0) {
+        console.log("[WebRTC] Partner joined. I am Peer 0, initiating offer...");
+        // Delay ensures Peer 1's socket is fully ready to receive the offer
+        setTimeout(() => createPeer(true), 500); 
       }
-    }
+      break;
+
+    case 'OFFER':
+      // Peer 1 receives the offer and creates its peer as the Answerer
+      if (!peerRef.current) {
+        console.log("[WebRTC] Received offer from Peer 0. Creating Answerer...");
+        createPeer(false);
+      }
+      peerRef.current.signal(msg.signal);
+      break;
+
+    case 'ANSWER':
+    case 'ICE_CANDIDATE':
+      // Forward the response signals to the existing peer instance
+      if (peerRef.current) {
+        peerRef.current.signal(msg.signal);
+      }
+      break;
+
+    case 'FIRE_AT':
+    case 'STITCH_READY':
+      onSignal?.(msg);
+      break;
+
+    case 'PARTNER_LEFT':
+      onPartnerLeft?.();
+      setPeerCount(1);
+      setState(ConnectionState.DISCONNECTED);
+      destroyPeer();
+      setRemoteStream(null);
+      break;
+
+    default:
+      onSignal?.(msg);
+  }
+};
 
     ws.onclose = () => {
       console.log('[WS] Disconnected')
