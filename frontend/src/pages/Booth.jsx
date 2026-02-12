@@ -112,8 +112,8 @@ export default function Booth() {
     roomId,
     localStream: stream,
     onSignal: handleSignal,
-    onPartnerJoined: handlePartnerJoined,
-    onPartnerLeft: handlePartnerLeft,
+    onPartnerJoined: () => console.log("Partner joined"),
+    onPartnerLeft: () => console.log("Partner left"),
   })
 
   // ── Mount ─────────────────────────────────────
@@ -170,7 +170,7 @@ export default function Booth() {
         return;
       }
       const url = URL.createObjectURL(blob);
-      setMyPhotoUrl(objUrl)
+      setMyPhotoUrl(url)
       setStitchStatus('uploading')
       setPhase('result')
 

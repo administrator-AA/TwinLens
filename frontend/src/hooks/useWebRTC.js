@@ -144,13 +144,15 @@ ws.onmessage = (evt) => {
     break
 
     case 'OFFER':
-      // Peer 1 receives the offer and creates its peer as the Answerer
       if (!peerRef.current) {
-        console.log("[WebRTC] Received offer from Peer 0. Creating Answerer...");
+        console.log("[WebRTC] Received offer, creating answerer...");
         createPeer(false);
       }
-      peerRef.current.signal(msg.signal);
-      break;
+      // Wrap in a small timeout to ensure createPeer finished construction
+      setTimeout(() => {
+        peerRef.current?.signal(msg.signal);
+      }, 100);
+    break;
 
     case 'ANSWER':
     case 'ICE_CANDIDATE':
