@@ -92,31 +92,42 @@ export function useWebRTC({ roomId, localStream, onSignal, onPartnerJoined, onPa
 
       switch (msg.type) {
         case 'JOINED':
-          setPeerIndex(msg.peer_index)
-          setPeerCount(msg.peers_count)
+          setPeerIndex(msg.peer_index);
+          setPeerCount(msg.peers_count);
+          
           if (msg.peers_count === 2) {
-            // We joined second — wait for offer
-            createPeer(false)
-          }
-          break
+            // We are the second person. Do NOT createPeer yet.
+            // Wait for the 'OFFER' message to trigger createPeer(false).
+            console.log("[WebRTC] Joined as Peer 1, waiting for offer...");
+        }
+        break;
 
         case 'PARTNER_JOINED':
-          setPeerCount(2)
-          setState(ConnectionState.PARTNER_JOINED)
-          onPartnerJoined?.()
-          // We were first — initiate
-          if (peerIndex === 0 || peerRef.current === null) {
-            setTimeout(() => createPeer(true), 200)
-          }
-          break
+          setPeerCount(2);
+          setState(ConnectionState.PARTNER_JOINED);
+          onPartnerJoined?.();
+          
+          // Only the first person (index 0) should initiate the call
+          if (peerIndex === 0 && localStreamRef.current) {
+            console.log("[WebRTC] I am Peer 0, initiating offer...");
+            createPeer(true);
+        }
+        break;
 
         case 'OFFER':
+          if (!peerRef.current) {
+            console.log("[WebRTC] Received Offer, creating answerer peer...");
+            createPeer(false);
+          }
+          peerRef.current.signal(msg.signal);
+          break;
+
         case 'ANSWER':
         case 'ICE_CANDIDATE':
           if (peerRef.current) {
-            peerRef.current.signal(msg.signal)
+            peerRef.current.signal(msg.signal);
           }
-          break
+        break;
 
         case 'FIRE_AT':
         case 'STITCH_READY':
