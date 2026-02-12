@@ -46,6 +46,29 @@ export function useWebRTC({ roomId, localStream, onSignal, onPartnerJoined, onPa
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
+        {
+        urls: "stun:stun.relay.metered.ca:80",
+      },
+      {
+        urls: "turn:global.relay.metered.ca:80",
+        username: "5663d26a4df196d48974ad18",
+        credential: "QoUV/lDtsrXh0TXl",
+      },
+      {
+        urls: "turn:global.relay.metered.ca:80?transport=tcp",
+        username: "5663d26a4df196d48974ad18",
+        credential: "QoUV/lDtsrXh0TXl",
+      },
+      {
+        urls: "turn:global.relay.metered.ca:443",
+        username: "5663d26a4df196d48974ad18",
+        credential: "QoUV/lDtsrXh0TXl",
+      },
+      {
+        urls: "turns:global.relay.metered.ca:443?transport=tcp",
+        username: "5663d26a4df196d48974ad18",
+        credential: "QoUV/lDtsrXh0TXl",
+      },
       ],
     },
   });
