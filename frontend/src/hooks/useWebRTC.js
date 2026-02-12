@@ -14,6 +14,7 @@ export const ConnectionState = {
 export function useWebRTC({ roomId, localStream, onSignal, onPartnerJoined, onPartnerLeft }) {
   const wsRef = useRef(null)
   const peerRef = useRef(null)
+  const peerIndexRef = useRef(null)
   const [state, setState] = useState(ConnectionState.IDLE)
   const [remoteStream, setRemoteStream] = useState(null)
   const [peerIndex, setPeerIndex] = useState(null)
@@ -21,6 +22,10 @@ export function useWebRTC({ roomId, localStream, onSignal, onPartnerJoined, onPa
   const localStreamRef = useRef(localStream)
 
   useEffect(() => { localStreamRef.current = localStream }, [localStream])
+
+  useEffect(() => {
+  peerIndexRef.current = peerIndex
+}, [peerIndex])
 
   const destroyPeer = useCallback(() => {
     peerRef.current?.destroy()
@@ -127,17 +132,16 @@ ws.onmessage = (evt) => {
       break;
 
     case 'PARTNER_JOINED':
-      setPeerCount(2);
-      setState(ConnectionState.PARTNER_JOINED);
-      onPartnerJoined?.();
-      
-      // ONLY Peer 0 initiates the call when a partner arrives
-      if (peerIndex === 0) {
-        console.log("[WebRTC] Partner joined. I am Peer 0, initiating offer...");
-        // Delay ensures Peer 1's socket is fully ready to receive the offer
-        setTimeout(() => createPeer(true), 500); 
-      }
-      break;
+    setPeerCount(2);
+    setState(ConnectionState.PARTNER_JOINED);
+    onPartnerJoined?.();
+    
+    // USE THE REF HERE, not the state variable
+    if (peerIndexRef.current === 0) {
+      console.log("[WebRTC] Partner joined. I am Peer 0, initiating offer...");
+      setTimeout(() => createPeer(true), 1000); // 1s delay is safer for cross-network
+    }
+  break;
 
     case 'OFFER':
       // Peer 1 receives the offer and creates its peer as the Answerer

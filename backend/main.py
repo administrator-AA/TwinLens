@@ -124,11 +124,11 @@ async def websocket_booth(websocket: WebSocket, room_id: str):
 
     # 4. If this was the second person, notify the FIRST person (Peer 0) only
     if len(rooms[room_id]) == 2:
-        # Peer 0 is always at index 0
+    # 1. Notify Peer 0 (the Host) that they need to initiate an offer
         await rooms[room_id][0].send_json({
             "type": "PARTNER_JOINED", 
             "peers_count": 2
-        })
+    })
 
     logger.info(f"Peer {peer_id} joined room {room_id} ({len(rooms[room_id])}/2)")
 
