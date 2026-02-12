@@ -553,11 +553,11 @@ function StatusMessage({ icon, text }) {
   )
 }
 
-function StatusDot({ state, peerCount }) {
-  const color = state === ConnectionState.CONNECTED ? 'var(--green)'
-    : state === ConnectionState.CONNECTING || state === ConnectionState.PARTNER_JOINED ? 'var(--amber)'
+function StatusDot({ rtcState, peerCount }) {
+  const color = rtcState === ConnectionState.CONNECTED ? 'var(--green)'
+    : state === ConnectionState.CONNECTING || rtcState === ConnectionState.PARTNER_JOINED ? 'var(--amber)'
     : 'var(--text-muted)'
-  const label = state === ConnectionState.CONNECTED ? `Connected · ${peerCount}/2`
+  const label = rtcState === ConnectionState.CONNECTED ? `Connected · ${peerCount}/2`
     : state === ConnectionState.CONNECTING ? 'Connecting…'
     : state === ConnectionState.PARTNER_JOINED ? 'Partner joining…'
     : state === ConnectionState.ERROR ? 'Error'
