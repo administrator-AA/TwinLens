@@ -132,8 +132,10 @@ export default function Booth() {
   }, [])
 
   useEffect(() => {
-    if (camReady && stream) {
-      connect(roomId)
+    // Only connect to signaling once we have a real stream to share
+    if (camReady && stream && roomId) {
+      console.log("Stream ready, initiating signaling...");
+      connect(roomId);
     }
   }, [camReady, stream, roomId])
 

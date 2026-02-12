@@ -27,13 +27,16 @@ export function useWebRTC({ roomId, localStream, onSignal, onPartnerJoined, onPa
     peerRef.current = null
   }, [])
 
-  const createPeer = useCallback((initiator) => {
-    if (!localStreamRef.current) return
-    destroyPeer()
+ const createPeer = useCallback((initiator) => {
+  // CRITICAL: If no stream yet, don't create the peer. 
+  // Wait for the next render when stream is available.
+  if (!localStream) return; 
+
+  destroyPeer();
 
     const peer = new SimplePeer({
       initiator,
-      stream: localStreamRef.current,
+      stream: localStream, // Use the prop directly
       trickle: true,
       config: {
         iceServers: [

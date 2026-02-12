@@ -77,7 +77,12 @@ export function useCamera() {
     return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92))
   }, [])
 
-  useEffect(() => () => stop(), [stop])
+  // Add this effect inside useCamera()
+  useEffect(() => {
+    if (ready && stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [ready, stream]); // This triggers as soon as the camera is ready
 
   return { stream, error, ready, videoRef, start, stop, captureStill }
 }
