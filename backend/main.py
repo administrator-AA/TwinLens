@@ -120,8 +120,20 @@ async def websocket_booth(websocket: WebSocket, room_id: str):
     })
 
     if len(rooms[room_id]) == 2:
-        for ws in rooms[room_id]:
-            await ws.send_json({"type": "PARTNER_JOINED", "peers_count": 2})
+        # Send PARTNER_JOINED ONLY to the first person (Peer 0)
+        # This tells Peer 0: "Someone joined, you are the Host, send an Offer."
+        await rooms[room_id][0].send_json({
+            "type": "PARTNER_JOINED", 
+            "peers_count": 2
+    })
+    
+    # Send a DIFFERENT message to the second person (Peer 1)
+    # This tells Peer 1: "You are the Guest, stay quiet and wait for an Offer."
+    await rooms[room_id][1].send_json({
+        "type": "JOINED", 
+        "peer_index": 1, 
+        "peers_count": 2
+    })
 
     logger.info(f"Peer {peer_id} joined room {room_id} ({len(rooms[room_id])}/2)")
 
