@@ -172,23 +172,18 @@ async def websocket_booth(websocket: WebSocket, room_id: str):
     except Exception as e:
         logger.error(f"Error in websocket {peer_id}: {e}")
     finally:
-        # Check if the room and websocket still exist in our tracker
         if room_id in rooms and websocket in rooms[room_id]:
             rooms[room_id].remove(websocket)
-            
-            # Notify remaining peers that this partner left
             for ws in rooms[room_id]:
                 try:
-                    # The FIX: Wrap this in try/except to ignore disconnected partners
                     await ws.send_json({"type": "PARTNER_LEFT"})
                 except Exception:
-                    # Ignore errors if the other peer is also gone or closing
-                    pass 
-            
-            # If no one is left, delete the room
-            if not rooms[room_id]:
-                rooms.pop(room_id, None)
-                room_metadata.pop(room_id, None)
+                    pass # Ignore if partner is also gone
+                
+                # If no one is left, delete the room
+                if not rooms[room_id]:
+                    rooms.pop(room_id, None)
+                    room_metadata.pop(room_id, None)
         
         logger.info(f"Peer {peer_id} cleaned up from room {room_id}")
 

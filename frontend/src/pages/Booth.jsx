@@ -164,9 +164,12 @@ export default function Booth() {
     setPhase('flash')
 
     try {
-      const blob = await captureStill()
-      setMyPhotoBlob(blob)
-      const objUrl = URL.createObjectURL(blob)
+      const blob = await captureStill();
+      if (!(blob instanceof Blob)) {
+        console.error("Capture failed: result is not a Blob", blob);
+        return;
+      }
+      const url = URL.createObjectURL(blob);
       setMyPhotoUrl(objUrl)
       setStitchStatus('uploading')
       setPhase('result')
