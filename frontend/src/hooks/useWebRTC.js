@@ -132,16 +132,16 @@ ws.onmessage = (evt) => {
       break;
 
     case 'PARTNER_JOINED':
-    setPeerCount(2);
-    setState(ConnectionState.PARTNER_JOINED);
-    onPartnerJoined?.();
-    
-    // USE THE REF HERE, not the state variable
-    if (peerIndexRef.current === 0) {
-      console.log("[WebRTC] Partner joined. I am Peer 0, initiating offer...");
-      setTimeout(() => createPeer(true), 1000); // 1s delay is safer for cross-network
+      setPeerCount(2)
+      setState(ConnectionState.PARTNER_JOINED)
+      onPartnerJoined?.()
+      
+      // Use peerIndexRef.current instead of peerIndex
+      if (peerIndexRef.current === 0) {
+        console.log("[WebRTC] Partner joined. I am Peer 0, initiating offer...")
+        setTimeout(() => createPeer(true), 1000) 
     }
-  break;
+    break
 
     case 'OFFER':
       // Peer 1 receives the offer and creates its peer as the Answerer
