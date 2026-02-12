@@ -555,12 +555,12 @@ function StatusMessage({ icon, text }) {
 
 function StatusDot({ rtcState, peerCount }) {
   const color = rtcState === ConnectionState.CONNECTED ? 'var(--green)'
-    : state === ConnectionState.CONNECTING || rtcState === ConnectionState.PARTNER_JOINED ? 'var(--amber)'
+    : rtcState === ConnectionState.CONNECTING || rtcState === ConnectionState.PARTNER_JOINED ? 'var(--amber)'
     : 'var(--text-muted)'
   const label = rtcState === ConnectionState.CONNECTED ? `Connected · ${peerCount}/2`
-    : state === ConnectionState.CONNECTING ? 'Connecting…'
-    : state === ConnectionState.PARTNER_JOINED ? 'Partner joining…'
-    : state === ConnectionState.ERROR ? 'Error'
+    : rtcState === ConnectionState.CONNECTING ? 'Connecting…'
+    : rtcState === ConnectionState.PARTNER_JOINED ? 'Partner joining…'
+    : rtcState === ConnectionState.ERROR ? 'Error'
     : 'Waiting'
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
